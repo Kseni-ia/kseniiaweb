@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 33% 99%;
+    --foreground: 60 15% 15%;
+    --card: 60 33% 99%;
+    --card-foreground: 60 15% 15%;
+    --popover: 60 33% 99%;
+    --popover-foreground: 60 15% 15%;
+    --primary: 60 35% 35%;
+    --primary-foreground: 60 33% 99%;
+    --secondary: 60 15% 94%;
+    --secondary-foreground: 60 15% 15%;
+    --muted: 60 15% 94%;
+    --muted-foreground: 60 10% 45%;
+    --accent: 60 15% 94%;
+    --accent-foreground: 60 15% 15%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 33% 99%;
+    --border: 60 15% 90%;
+    --input: 60 15% 90%;
+    --ring: 60 35% 35%;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 60 15% 10%;
+    --foreground: 60 33% 99%;
+    --card: 60 15% 10%;
+    --card-foreground: 60 33% 99%;
+    --popover: 60 15% 10%;
+    --popover-foreground: 60 33% 99%;
+    --primary: 60 35% 45%;
+    --primary-foreground: 60 15% 10%;
+    --secondary: 60 15% 20%;
+    --secondary-foreground: 60 33% 99%;
+    --muted: 60 15% 20%;
+    --muted-foreground: 60 10% 75%;
+    --accent: 60 15% 20%;
+    --accent-foreground: 60 33% 99%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 33% 99%;
+    --border: 60 15% 20%;
+    --input: 60 15% 20%;
+    --ring: 60 35% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Poppins', sans-serif;
+  }
+  html {
+    @apply scroll-smooth;
+  }
+  h1, h2, h3, .caudex-font {
+    font-family: 'Caudex', serif;
+    letter-spacing: 0.01em;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+    filter: brightness(1.2) saturate(1.2);
+  }
+  25% {
+    filter: brightness(1.35) saturate(1.35);
+  }
+  50% {
+    background-position: 0% center;
+    filter: brightness(1.5) saturate(1.5);
+  }
+  75% {
+    filter: brightness(1.35) saturate(1.35);
+  }
+  100% {
+    background-position: 200% center;
+    filter: brightness(1.2) saturate(1.2);
+  }
+}
