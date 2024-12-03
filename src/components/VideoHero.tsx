@@ -6,7 +6,7 @@ export function VideoHero() {
     <div className="container py-24 md:py-32">
       <div className="flex flex-col items-center gap-12 text-center max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-red-200">
-          Transform Your English with Expert Personal Guidance
+          Transform Your Englishggg with Expert Personal Guidance
         </h1>
         <div className="w-full">
           <YouTubeEmbed videoId="cHEOsKddURQ" />
