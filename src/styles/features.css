@@ -1,0 +1,25 @@
+@keyframes iconGradient {
+  0% {
+    color: #000080;
+    transform: scale(1);
+  }
+  50% {
+    color: #87CEEB;
+    transform: scale(1.1);
+  }
+  100% {
+    color: #000080;
+    transform: scale(1);
+  }
+}
+
+.feature-icon {
+  animation: iconGradient 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 128, 0.3));
+  transition: transform 0.3s ease;
+}
+
+.feature-icon:hover {
+  filter: drop-shadow(0 0 15px rgba(65, 105, 225, 0.5));
+  transform: scale(1.15);
+}

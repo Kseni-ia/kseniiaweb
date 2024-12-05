@@ -1,0 +1,25 @@
+@keyframes navyGradient {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.logo-text {
+  background: linear-gradient(
+    90deg,
+    #000080 0%,
+    #1E90FF 25%,
+    #4169E1 50%,
+    #1E90FF 75%,
+    #000080 100%
+  );
+  background-size: 200% 100%;
+  animation: navyGradient 3s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px rgba(0, 0, 128, 0.15);
+}
