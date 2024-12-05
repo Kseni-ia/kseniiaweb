@@ -39,7 +39,7 @@ export function Features() {
         {features.map((feature, index) => (
           <div key={index} className="flex flex-col items-center text-center">
             <div className="mb-6 p-2">
-              <feature.icon className="h-24 w-24 text-[#000080] transition-transform duration-300 hover:scale-110" strokeWidth={2} />
+              <feature.icon className="h-24 w-24 text-[#000080] transition-all duration-300 hover:text-[#4169E1] hover:scale-110" strokeWidth={2} />
             </div>
             <h3 className="font-semibold text-xl mb-3 text-[#000080]">
               {feature.title}
