@@ -3,22 +3,30 @@ import { YouTubeEmbed } from "./YouTubeEmbed";
 
 export function VideoHero() {
   return (
-    <div className="container py-24 md:py-32">
-      <div className="flex flex-col items-center gap-12 text-center max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-[#000080]">
+    <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-8 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col lg:w-1/2 space-y-4 text-center lg:text-left">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter text-[#000080]">
           Transform Your English with Expert Personal Guidance
         </h1>
-        <div className="w-full">
-          <YouTubeEmbed videoId="cHEOsKddURQ" />
+        <p className="text-base sm:text-lg text-[#4169E1] max-w-xl mx-auto lg:mx-0">
+          Hello, I am Kseniia, a certificated English tutor. Helping students achieve fluency through personalized, engaging lessons.
+        </p>
+        <div className="flex justify-center lg:justify-start">
+          <Button 
+            className="w-fit bg-[#000080] hover:bg-[#4169E1] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
+            Book a Lesson
+          </Button>
         </div>
-        <div className="flex flex-col items-center gap-6">
-          <p className="text-lg text-[#4169E1]">
-            Hello, I am Kseniia, a certificated English tutor. Helping students achieve fluency through personalized, engaging lessons.
-          </p>
-          <div className="flex gap-4">
-            <Button size="lg" className="h-12 px-8 bg-[#000080] text-white hover:bg-[#4169E1] transition-colors">
-              Book a Lesson
-            </Button>
+      </div>
+      <div className="lg:w-1/2 mt-6 lg:mt-0 w-full max-w-md mx-auto">
+        <div className="relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#000080] via-[#4169E1] to-[#000080] rounded-2xl blur opacity-30"></div>
+          <div className="relative rounded-xl overflow-hidden border-2 border-[#000080]/20 shadow-xl">
+            <YouTubeEmbed 
+              videoId="cHEOsKddURQ" 
+              className="w-full aspect-video object-cover hover:scale-105 transition-transform duration-300"
+            />
           </div>
         </div>
       </div>
