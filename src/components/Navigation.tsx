@@ -6,22 +6,48 @@ import { BookingModal } from "./BookingModal";
 export function Navigation() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
+  const navigateToSection = (index: number) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.fullpage_api) {
+      window.fullpage_api.moveTo(index + 1);
+    }
+  };
+
   return (
-    <nav className="w-full border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white/90">
+    <nav className="w-full border-b bg-white shadow-sm fixed top-0 z-50">
       <div className="flex h-16 items-center justify-between px-4">
         <a href="/" className="flex items-center">
           <Logo />
         </a>
         
-        <div className="hidden md:flex flex-1 justify-center gap-20">
-          <a href="#features" className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110">
-            Why Choose Me
+        <div className="hidden md:flex flex-1 justify-center gap-12">
+          <a 
+            href="#get-started" 
+            onClick={navigateToSection(0)}
+            className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+          >
+            Get Started
           </a>
-          <a href="#testimonials" className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110">
-            Student Stories
+          <a 
+            href="#features" 
+            onClick={navigateToSection(1)}
+            className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+          >
+            Why Choose EDUBRIDGE
           </a>
-          <a href="#pricing" className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110">
+          <a 
+            href="#pricing" 
+            onClick={navigateToSection(2)}
+            className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+          >
             Pricing
+          </a>
+          <a 
+            href="#contact" 
+            onClick={navigateToSection(3)}
+            className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+          >
+            Contact
           </a>
         </div>
 

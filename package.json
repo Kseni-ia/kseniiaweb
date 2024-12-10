@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@fullpage/react-fullpage": "^0.1.45",
     "@googleapis/calendar": "^9.7.9",
     "@hookform/resolvers": "^3.9.0",
@@ -48,6 +49,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.3.0",
+    "framer-motion": "^11.13.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
     "next-themes": "^0.3.0",
