@@ -1,72 +1,58 @@
-import { useState, FormEvent } from "react";
+                                                                                                import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
+
+interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  date: string;
+}
 
 export function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    message: ""
+    message: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<{
-    email?: string;
-    general?: string;
-  }>({});
-  const [success, setSuccess] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const validateEmail = (email: string) => {
-    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError({});
-    setSuccess(false);
+    
+    // Create new message object
+    const newMessage: ContactMessage = {
+      id: Date.now(),
+      ...formData,
+      date: new Date().toLocaleString(),
+    };
 
-    // Validate email
-    if (!validateEmail(formData.email)) {
-      setError(prev => ({ ...prev, email: "Please enter a valid email address" }));
-      return;
-    }
+    // Get existing messages from localStorage
+    const existingMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+    
+    // Add new message to the array
+    const updatedMessages = [newMessage, ...existingMessages];
+    
+    // Save back to localStorage
+    localStorage.setItem('contactMessages', JSON.stringify(updatedMessages));
 
-    if (!formData.name || !formData.message) {
-      setError(prev => ({ ...prev, general: "All fields are required" }));
-      return;
-    }
+    // Reset form and show success message
+    setFormData({ name: "", email: "", message: "" });
+    setIsSubmitted(true);
 
-    setIsSubmitting(true);
-
-    try {
-      // Simulate sending message
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Message submitted:", {
-        name: formData.name,
-        email: formData.email,
-        message: formData.message
-      });
-
-      setSuccess(true);
-      setFormData({ name: "", email: "", message: "" });
-    } catch (err) {
-      setError(prev => ({ ...prev, general: "Failed to send message. Please try again." }));
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setIsSubmitted(false);
+    }, 3000);
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const email = e.target.value;
-    setFormData(prev => ({ ...prev, email }));
-    
-    if (email && !validateEmail(email)) {
-      setError(prev => ({ ...prev, email: "Please enter a valid email address" }));
-    } else {
-      setError(prev => ({ ...prev, email: undefined }));
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -74,9 +60,9 @@ export function Contact() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
-      className="w-full max-w-2xl mx-auto px-4"
+      className="w-full max-w-4xl mx-auto px-4"
     >
-      <div className="text-center mb-6">
+      <div className="text-center mb-8">
         <h2 className="text-3xl font-bold tracking-tighter text-[#000080] sm:text-4xl mb-2">
           Get in Touch
         </h2>
@@ -85,61 +71,69 @@ export function Contact() {
         </p>
       </div>
 
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg">
+      {isSubmitted && (
+        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg text-center">
           Message sent successfully! I'll get back to you soon.
         </div>
       )}
-      
-      {error.general && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
-          {error.general}
-        </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <Input
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              type="text"
               id="name"
+              name="name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Name"
-              className="w-full border-[#000080]/20 focus:border-[#000080] focus:ring-1 focus:ring-[#000080]"
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 rounded-md border border-gray-300 shadow-sm focus:border-[#000080] focus:ring-1 focus:ring-[#000080] transition-colors"
+              placeholder="Your name"
             />
           </div>
+
           <div>
-            <Input
-              id="email"
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
               type="email"
+              id="email"
+              name="email"
               value={formData.email}
-              onChange={handleEmailChange}
-              placeholder="Email"
-              className={`w-full border-[#000080]/20 focus:border-[#000080] focus:ring-1 focus:ring-[#000080] ${
-                error.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-              }`}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 rounded-md border border-gray-300 shadow-sm focus:border-[#000080] focus:ring-1 focus:ring-[#000080] transition-colors"
+              placeholder="your@email.com"
             />
-            {error.email && (
-              <p className="mt-1 text-sm text-red-500">{error.email}</p>
-            )}
           </div>
         </div>
+
         <div>
-          <Textarea
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+            Message
+          </label>
+          <textarea
             id="message"
+            name="message"
             value={formData.message}
-            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            placeholder="Your message"
-            className="w-full min-h-[100px] border-[#000080]/20 focus:border-[#000080] focus:ring-1 focus:ring-[#000080]"
+            onChange={handleChange}
+            required
+            rows={6}
+            className="w-full px-4 py-2 rounded-md border border-gray-300 shadow-sm focus:border-[#000080] focus:ring-1 focus:ring-[#000080] transition-colors"
+            placeholder="Your message here..."
           />
         </div>
+
         <div className="text-center">
           <Button
             type="submit"
-            disabled={isSubmitting}
-            className="bg-[#000080] text-white hover:bg-[#4169E1] px-8"
+            className="bg-[#000080] text-white hover:bg-[#4169E1] px-8 py-2 text-lg transition-colors"
           >
-            {isSubmitting ? "Sending..." : "Send Message"}
+            Send Message
           </Button>
         </div>
       </form>

@@ -1,5 +1,5 @@
 import ReactFullpage from "@fullpage/react-fullpage";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { VideoHero } from "@/components/VideoHero";
 import { Features } from "@/components/Features";
@@ -10,53 +10,65 @@ const licenseKey = 'YOUR_KEY_HERE'; // Replace with your fullPage.js license key
 
 function App() {
   const [currentSection, setCurrentSection] = useState(0);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const adminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+    setIsAdminLoggedIn(adminLoggedIn);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <ReactFullpage
-        licenseKey={licenseKey}
-        scrollingSpeed={800}
-        scrollBar={false}
-        navigation={true}
-        navigationPosition="right"
-        css3={true}
-        dragAndMove={true}
-        autoScrolling={true}
-        fitToSection={true}
-        paddingTop="0"
-        responsiveWidth={768}
-        afterLoad={(origin, destination) => {
-          setCurrentSection(destination.index);
-        }}
-        render={() => (
-          <ReactFullpage.Wrapper>
-            <div className="section min-h-screen pt-16">
-              <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
-                <VideoHero />
+      {isAdminLoggedIn ? (
+        <div className="h-screen w-screen overflow-hidden">
+          <Navigation />
+        </div>
+      ) : (
+        <ReactFullpage
+          licenseKey={licenseKey}
+          scrollingSpeed={800}
+          scrollBar={false}
+          navigation={true}
+          navigationPosition="right"
+          css3={true}
+          dragAndMove={true}
+          autoScrolling={true}
+          fitToSection={true}
+          paddingTop="0"
+          responsiveWidth={768}
+          afterLoad={(origin, destination) => {
+            setCurrentSection(destination.index);
+          }}
+          render={() => (
+            <ReactFullpage.Wrapper>
+              <div className="section min-h-screen pt-16">
+                <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
+                  <VideoHero />
+                </div>
               </div>
-            </div>
-            
-            <div className="section min-h-screen">
-              <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
-                <Features />
+              
+              <div className="section min-h-screen">
+                <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
+                  <Features />
+                </div>
               </div>
-            </div>
-            
-            <div className="section min-h-screen">
-              <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
-                <Pricing />
+              
+              <div className="section min-h-screen">
+                <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
+                  <Pricing />
+                </div>
               </div>
-            </div>
-            
-            <div className="section min-h-screen">
-              <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
-                <Contact />
+              
+              <div className="section min-h-screen">
+                <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
+                  <Contact />
+                </div>
               </div>
-            </div>
-          </ReactFullpage.Wrapper>
-        )}
-      />
+            </ReactFullpage.Wrapper>
+          )}
+        />
+      )}
     </div>
   );
 }
