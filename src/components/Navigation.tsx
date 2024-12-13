@@ -1,77 +1,84 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
 import { AdminLogin } from "./admin/AdminLogin";
-import { AdminDashboard } from "./admin/AdminDashboard";
+import { SignUpModal } from "./SignUpModal";
+import { auth } from '../firebase/config';
 
-export function Navigation() {
+type ActiveTab = 'chat' | 'calendar' | 'credits';
+
+interface NavigationProps {
+  activeTab: ActiveTab;
+  onTabChange: (tab: ActiveTab) => void;
+  isUserLoggedIn: boolean;
+  isAdminLoggedIn: boolean;
+}
+
+export function Navigation({ 
+  activeTab, 
+  onTabChange, 
+  isUserLoggedIn, 
+  isAdminLoggedIn 
+}: NavigationProps) {
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'messages' | 'bookings' | 'contacts'>('messages');
-
-  useEffect(() => {
-    const adminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
-    setIsAdminLoggedIn(adminLoggedIn);
-  }, []);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('isAdminLoggedIn');
-    window.location.reload();
-  };
-
-  const navigateToSection = (index: number) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (window.fullpage_api) {
-      window.fullpage_api.moveTo(index + 1);
+    if (isAdminLoggedIn) {
+      localStorage.removeItem('isAdminLoggedIn');
+    } 
+    if (isUserLoggedIn) {
+      auth.signOut();
     }
+    window.location.href = '/';
   };
 
   return (
-    <>
-      <nav className="w-full border-b bg-white shadow-sm fixed top-0 z-50">
-        <div className="flex h-16 items-center justify-between px-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
           <a href="/" className="flex items-center">
             <Logo />
           </a>
           
-          {isAdminLoggedIn ? (
+          {isUserLoggedIn || isAdminLoggedIn ? (
             <div className="flex flex-1 items-center justify-between">
-              <div className="w-20"></div> {/* Spacer for centering */}
+              <div className="w-20"></div>
               <div className="flex items-center justify-center space-x-8">
                 <button
-                  onClick={() => setActiveTab('messages')}
-                  className={`px-3 py-2 text-sm font-medium transition-colors duration-300 ${
-                    activeTab === 'messages'
+                  onClick={() => onTabChange('chat')}
+                  className={`px-3 py-2 text-sm font-medium ${
+                    activeTab === 'chat'
                       ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-700 hover:text-[#000080]'
+                      : 'text-gray-500 hover:text-[#000080]'
                   }`}
                 >
-                  Messages
+                  Chat
                 </button>
                 <button
-                  onClick={() => setActiveTab('bookings')}
-                  className={`px-3 py-2 text-sm font-medium transition-colors duration-300 ${
-                    activeTab === 'bookings'
+                  onClick={() => onTabChange('calendar')}
+                  className={`px-3 py-2 text-sm font-medium ${
+                    activeTab === 'calendar'
                       ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-700 hover:text-[#000080]'
+                      : 'text-gray-500 hover:text-[#000080]'
                   }`}
                 >
-                  Bookings
+                  Calendar
                 </button>
                 <button
-                  onClick={() => setActiveTab('contacts')}
-                  className={`px-3 py-2 text-sm font-medium transition-colors duration-300 ${
-                    activeTab === 'contacts'
+                  onClick={() => onTabChange('credits')}
+                  className={`px-3 py-2 text-sm font-medium ${
+                    activeTab === 'credits'
                       ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-700 hover:text-[#000080]'
+                      : 'text-gray-500 hover:text-[#000080]'
                   }`}
                 >
-                  Contacts
+                  Credits
                 </button>
               </div>
               <Button
                 onClick={handleLogout}
-                className="bg-red-600 text-white hover:bg-red-700 transition-all duration-300 w-20"
+                className="bg-red-600 text-white hover:bg-red-700 transition-all duration-300"
               >
                 Log out
               </Button>
@@ -80,53 +87,58 @@ export function Navigation() {
             <>
               <div className="hidden md:flex flex-1 justify-center gap-12">
                 <a 
-                  href="#get-started" 
-                  onClick={navigateToSection(0)}
-                  className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+                  href="#about"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
                 >
-                  Get Started
+                  About
                 </a>
-                <a 
-                  href="#features" 
-                  onClick={navigateToSection(1)}
-                  className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+                <a
+                  href="#features"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
                 >
-                  Why Choose EDUBRIDGE
+                  Features
                 </a>
-                <a 
-                  href="#pricing" 
-                  onClick={navigateToSection(2)}
-                  className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+                <a
+                  href="#pricing"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
                 >
                   Pricing
                 </a>
-                <a 
-                  href="#contact" 
-                  onClick={navigateToSection(3)}
-                  className="flex items-center text-lg font-medium text-[#000080] transition-all duration-300 hover:text-[#4169E1] text-center hover:scale-110"
+                <a
+                  href="#contact"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
                 >
                   Contact
                 </a>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center space-x-4">
                 <Button
                   onClick={() => setIsAdminLoginOpen(true)}
                   className="bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
                 >
                   Log in
                 </Button>
+                <Button
+                  onClick={() => setIsSignUpOpen(true)}
+                  className="border-[#000080] text-[#000080] hover:bg-[#000080]/10"
+                  variant="outline"
+                >
+                  Sign up
+                </Button>
               </div>
             </>
           )}
         </div>
-      </nav>
+      </div>
 
       {isAdminLoginOpen && !isAdminLoggedIn && (
         <AdminLogin onClose={() => setIsAdminLoginOpen(false)} />
       )}
       
-      {isAdminLoggedIn && <AdminDashboard activeTab={activeTab} />}
-    </>
+      {isSignUpOpen && (
+        <SignUpModal onClose={() => setIsSignUpOpen(false)} />
+      )}
+    </nav>
   );
 }

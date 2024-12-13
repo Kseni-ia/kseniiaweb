@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { auth } from '../../firebase/config';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface AdminLoginProps {
   onClose: () => void;
@@ -7,70 +11,121 @@ interface AdminLoginProps {
 export function AdminLogin({ onClose }: AdminLoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isResetting, setIsResetting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'tutoringlknv@gmail.com' && password === '12345678') {
+    setIsLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       localStorage.setItem('isAdminLoggedIn', 'true');
-      window.location.reload();
-    } else {
-      setError('Invalid email or password');
+      onClose();
+    } catch (error) {
+      console.error('Error logging in:', error);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      alert('Please enter your email address');
+      return;
+    }
+    
+    setIsResetting(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert('Password reset email sent! Please check your inbox.');
+      onClose();
+    } catch (error) {
+      alert('Failed to send reset email. Please try again.');
+    } finally {
+      setIsResetting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-6 text-center text-[#000080]">Log in</h2>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[#000080]">Admin Login</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            ×
+          </button>
+        </div>
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
             </label>
-            <input
-              type="email"
+            <Input
               id="email"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#000080] focus:ring-[#000080]"
               required
+              className="mt-1"
             />
           </div>
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <input
-              type="password"
+            <Input
               id="password"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#000080] focus:ring-[#000080]"
               required
+              className="mt-1"
             />
           </div>
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
+
+          <div className="flex space-x-2">
+            <Button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-[#000080] rounded-md hover:bg-[#4169E1]"
+              disabled={isLoading}
+              className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
             >
-              Log in
-            </button>
+              {isLoading ? 'Logging in...' : 'Log in'}
+            </Button>
+
+            {failedAttempts >= 2 && (
+              <Button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={isResetting}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white transition-all duration-300"
+              >
+                {isResetting ? '...' : 'Reset'}
+              </Button>
+            )}
           </div>
+
+          <Button
+            type="button"
+            onClick={onClose}
+            className="w-full mt-2 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-all duration-300"
+          >
+            Cancel
+          </Button>
         </form>
+
+        {failedAttempts >= 2 && (
+          <p className="mt-4 text-sm text-red-600 text-center">
+            Multiple failed login attempts detected
+          </p>
+        )}
       </div>
     </div>
   );

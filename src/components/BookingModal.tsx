@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { db } from "../firebase/config";
+import { collection, addDoc } from "firebase/firestore";
 
 interface BookingModalProps {
   isOpen: boolean;
