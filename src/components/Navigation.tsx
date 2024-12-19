@@ -24,11 +24,6 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
     window.location.href = '/';
   };
 
-  const handleClearCache = () => {
-    localStorage.clear();
-    window.location.reload();
-  };
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,12 +40,6 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
                 className="bg-red-600 text-white hover:bg-red-700 transition-all duration-300"
               >
                 Admin Logout
-              </Button>
-              <Button
-                onClick={handleClearCache}
-                className="bg-gray-600 text-white hover:bg-gray-700"
-              >
-                Clear Cache
               </Button>
             </div>
           ) : (
@@ -105,12 +94,6 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
                   className="bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
                 >
                   Admin Login
-                </Button>
-                <Button
-                  onClick={handleClearCache}
-                  className="bg-gray-600 text-white hover:bg-gray-700"
-                >
-                  Clear Cache
                 </Button>
               </div>
             </>

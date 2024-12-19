@@ -66,14 +66,14 @@ export function CalendarPanel() {
   return (
     <div className="h-full flex">
       {/* Left side - Bookings List */}
-      <div className="w-1/4 border-r border-gray-200 bg-white">
+      <div className="w-1/4 border-r border-gray-200 bg-white/90">
         <div className="p-3">
           <h2 className="text-lg font-semibold text-[#000080] mb-2">Booked Lessons</h2>
           <div className="space-y-2">
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="p-2 bg-white rounded-lg shadow border border-gray-100 hover:border-[#000080] hover:shadow-md transition-all duration-200"
+                className="p-2 bg-white/90 rounded-lg shadow border border-gray-100 hover:border-[#000080] hover:shadow-md transition-all duration-200"
               >
                 <div className="flex justify-between items-start">
                   <div className="font-semibold text-[#000080] text-sm">
@@ -97,9 +97,9 @@ export function CalendarPanel() {
       </div>
 
       {/* Right side - Calendar */}
-      <div className="w-3/4 bg-gray-50">
+      <div className="w-3/4 bg-transparent">
         <div className="h-full flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-md p-3">
+          <div className="bg-white/90 rounded-lg shadow-md p-3">
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={handlePreviousMonth}
@@ -128,18 +128,18 @@ export function CalendarPanel() {
                 toMonth={new Date(2024, 11)}
                 fixedWeeks
                 showOutsideDays
-                className="rounded-lg border-none [&_.rdp]:p-1 [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:w-14 [&_.rdp-day]:h-12 [&_.rdp-day]:text-base [&_.rdp-day_focus]:bg-[#000080] [&_.rdp-day_hover]:bg-[#000080]/10 [&_.rdp-day_active]:bg-[#000080] [&_.rdp-day_selected]:bg-[#000080] [&_.rdp-day_selected]:text-white [&_.rdp-day_selected]:hover:bg-[#4169E1] [&_.rdp-day_today]:bg-[#000080]/5 [&_.rdp-button_focus]:shadow-[#000080] [&_.rdp-caption]:hidden [&_.rdp-months]:justify-center [&_.rdp-head_cell]:text-base [&_.rdp-head_cell]:font-normal [&_.rdp-head_cell]:text-[#000080] [&_.rdp-tbody_tr]:mb-[8px] [&_.rdp-tbody]:space-y-[8px] [&_.rdp-tbody_tr:not(:last-child)]:mb-[8px] [&_.rdp-cell]:p-0 [&_.rdp-head_cell]:p-0 [&_.rdp-head_row]:mb-[8px] [&_.rdp-table]:mx-auto [&_.rdp-cell]:w-14 [&_.rdp-head_cell]:w-14"
+                className="rounded-lg border-none [&_.rdp]:p-2 [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:w-16 [&_.rdp-day]:h-14 [&_.rdp-day]:text-lg [&_.rdp-day_focus]:bg-[#000080] [&_.rdp-day_hover]:bg-[#000080]/10 [&_.rdp-day_active]:bg-[#000080] [&_.rdp-day_selected]:bg-[#000080] [&_.rdp-day_selected]:text-white [&_.rdp-day_selected]:hover:bg-[#4169E1] [&_.rdp-day_today]:bg-[#000080]/5 [&_.rdp-button_focus]:shadow-[#000080] [&_.rdp-caption]:hidden [&_.rdp-months]:justify-center [&_.rdp-head_cell]:text-lg [&_.rdp-head_cell]:font-normal [&_.rdp-head_cell]:text-[#000080] [&_.rdp-tbody_tr]:mb-[10px] [&_.rdp-tbody]:space-y-[10px] [&_.rdp-tbody_tr:not(:last-child)]:mb-[10px] [&_.rdp-cell]:p-0 [&_.rdp-head_cell]:p-0 [&_.rdp-head_row]:mb-[10px] [&_.rdp-table]:mx-auto [&_.rdp-cell]:w-16 [&_.rdp-head_cell]:w-16"
                 classNames={{
                   day_today: "font-bold text-[#000080] ring-1 ring-[#000080] ring-offset-1",
                   day_selected: "bg-[#000080] text-white hover:bg-[#4169E1] focus:bg-[#4169E1] transition-colors duration-200",
                   day_outside: "text-gray-300 hover:bg-gray-50",
                   button: "hover:bg-[#000080]/10 transition-all duration-200",
-                  head_cell: "text-[#000080] font-normal text-base uppercase tracking-wide w-14 p-0",
-                  cell: "text-center relative [&:has([aria-selected])]:bg-[#000080]/5 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 w-14 p-0",
+                  head_cell: "text-[#000080] font-normal text-lg uppercase tracking-wide w-16 p-0",
+                  cell: "text-center relative p-0 w-16",
                   table: "w-full border-collapse mx-auto",
-                  tbody: "space-y-[8px]",
-                  head_row: "mb-[8px]",
-                  row: "mb-[8px]",
+                  tbody: "space-y-[10px]",
+                  head_row: "mb-[10px]",
+                  row: "mb-[10px]",
                   caption: "hidden",
                   months: "justify-center"
                 }}
