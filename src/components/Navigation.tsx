@@ -1,36 +1,32 @@
-import { useState } from "react";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
 import { AdminLogin } from "./admin/AdminLogin";
-import { SignUpModal } from "./SignUpModal";
 import { auth } from '../firebase/config';
 
-type ActiveTab = 'chat' | 'calendar' | 'credits';
+declare global {
+  interface Window {
+    fullpage_api?: {
+      moveTo: (section: number) => void;
+    };
+  }
+}
 
 interface NavigationProps {
-  activeTab: ActiveTab;
-  onTabChange: (tab: ActiveTab) => void;
-  isUserLoggedIn: boolean;
   isAdminLoggedIn: boolean;
 }
 
-export function Navigation({ 
-  activeTab, 
-  onTabChange, 
-  isUserLoggedIn, 
-  isAdminLoggedIn 
-}: NavigationProps) {
+export function Navigation({ isAdminLoggedIn }: NavigationProps) {
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
-  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   const handleLogout = () => {
-    if (isAdminLoggedIn) {
-      localStorage.removeItem('isAdminLoggedIn');
-    } 
-    if (isUserLoggedIn) {
-      auth.signOut();
-    }
+    localStorage.removeItem('isAdminLoggedIn');
     window.location.href = '/';
+  };
+
+  const handleClearCache = () => {
+    localStorage.clear();
+    window.location.reload();
   };
 
   return (
@@ -41,72 +37,63 @@ export function Navigation({
             <Logo />
           </a>
           
-          {isUserLoggedIn || isAdminLoggedIn ? (
-            <div className="flex flex-1 items-center justify-between">
-              <div className="w-20"></div>
-              <div className="flex items-center justify-center space-x-8">
-                <button
-                  onClick={() => onTabChange('chat')}
-                  className={`px-3 py-2 text-sm font-medium ${
-                    activeTab === 'chat'
-                      ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-500 hover:text-[#000080]'
-                  }`}
-                >
-                  Chat
-                </button>
-                <button
-                  onClick={() => onTabChange('calendar')}
-                  className={`px-3 py-2 text-sm font-medium ${
-                    activeTab === 'calendar'
-                      ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-500 hover:text-[#000080]'
-                  }`}
-                >
-                  Calendar
-                </button>
-                <button
-                  onClick={() => onTabChange('credits')}
-                  className={`px-3 py-2 text-sm font-medium ${
-                    activeTab === 'credits'
-                      ? 'text-[#000080] border-b-2 border-[#000080]'
-                      : 'text-gray-500 hover:text-[#000080]'
-                  }`}
-                >
-                  Credits
-                </button>
-              </div>
+          {isAdminLoggedIn ? (
+            // Admin Navigation
+            <div className="flex items-center justify-end space-x-4">
               <Button
                 onClick={handleLogout}
                 className="bg-red-600 text-white hover:bg-red-700 transition-all duration-300"
               >
-                Log out
+                Admin Logout
+              </Button>
+              <Button
+                onClick={handleClearCache}
+                className="bg-gray-600 text-white hover:bg-gray-700"
+              >
+                Clear Cache
               </Button>
             </div>
           ) : (
+            // Public Navigation
             <>
               <div className="hidden md:flex flex-1 justify-center gap-12">
                 <a 
-                  href="#about"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
+                  href="#home"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.fullpage_api?.moveTo(1);
+                  }}
+                  className="inline-flex items-center px-1 pt-1 text-lg font-bold text-[#000080] hover:text-[#4169E1] transition-all duration-300 transform hover:scale-110 font-caudex cursor-pointer"
                 >
                   About
                 </a>
                 <a
                   href="#features"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.fullpage_api?.moveTo(2);
+                  }}
+                  className="inline-flex items-center px-1 pt-1 text-lg font-bold text-[#000080] hover:text-[#4169E1] transition-all duration-300 transform hover:scale-110 font-caudex cursor-pointer"
                 >
-                  Features
+                  Why Choose EduBridge
                 </a>
                 <a
                   href="#pricing"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.fullpage_api?.moveTo(3);
+                  }}
+                  className="inline-flex items-center px-1 pt-1 text-lg font-bold text-[#000080] hover:text-[#4169E1] transition-all duration-300 transform hover:scale-110 font-caudex cursor-pointer"
                 >
                   Pricing
                 </a>
                 <a
                   href="#contact"
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-[#000080]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.fullpage_api?.moveTo(4);
+                  }}
+                  className="inline-flex items-center px-1 pt-1 text-lg font-bold text-[#000080] hover:text-[#4169E1] transition-all duration-300 transform hover:scale-110 font-caudex cursor-pointer"
                 >
                   Contact
                 </a>
@@ -117,14 +104,13 @@ export function Navigation({
                   onClick={() => setIsAdminLoginOpen(true)}
                   className="bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
                 >
-                  Log in
+                  Admin Login
                 </Button>
                 <Button
-                  onClick={() => setIsSignUpOpen(true)}
-                  className="border-[#000080] text-[#000080] hover:bg-[#000080]/10"
-                  variant="outline"
+                  onClick={handleClearCache}
+                  className="bg-gray-600 text-white hover:bg-gray-700"
                 >
-                  Sign up
+                  Clear Cache
                 </Button>
               </div>
             </>
@@ -134,10 +120,6 @@ export function Navigation({
 
       {isAdminLoginOpen && !isAdminLoggedIn && (
         <AdminLogin onClose={() => setIsAdminLoginOpen(false)} />
-      )}
-      
-      {isSignUpOpen && (
-        <SignUpModal onClose={() => setIsSignUpOpen(false)} />
       )}
     </nav>
   );

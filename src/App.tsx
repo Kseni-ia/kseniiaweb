@@ -5,30 +5,19 @@ import { Features } from "@/components/Features";
 import { Pricing } from "@/components/Pricing";
 import { Contact } from "@/components/Contact";
 import ReactFullpage from '@fullpage/react-fullpage';
-import { UserDashboard } from './components/user/UserDashboard';
-import { auth } from './firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Toaster } from 'sonner';
-
-type ActiveTab = 'chat' | 'calendar' | 'credits';
+import { PageDots } from './components/PageDots';
 
 function App() {
   const [currentSection, setCurrentSection] = useState(0);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('chat');
 
   useEffect(() => {
     const adminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
     setIsAdminLoggedIn(adminLoggedIn);
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsUserLoggedIn(!!user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -39,17 +28,11 @@ function App() {
     );
   }
 
-  if (isUserLoggedIn || isAdminLoggedIn) {
+  if (isAdminLoggedIn) {
     return (
       <div className="min-h-screen bg-background">
         <Toaster position="top-center" />
-        <Navigation 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab}
-          isUserLoggedIn={isUserLoggedIn}
-          isAdminLoggedIn={isAdminLoggedIn}
-        />
-        <UserDashboard activeTab={activeTab} />
+        <AdminDashboard />
       </div>
     );
   }
@@ -57,12 +40,8 @@ function App() {
   return (
     <>
       <Toaster position="top-center" />
-      <Navigation 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab}
-        isUserLoggedIn={isUserLoggedIn}
-        isAdminLoggedIn={isAdminLoggedIn}
-      />
+      <Navigation isAdminLoggedIn={isAdminLoggedIn} />
+      <PageDots currentSection={currentSection} totalSections={4} />
       <ReactFullpage
         scrollingSpeed={1000}
         onLeave={(origin, destination) => {

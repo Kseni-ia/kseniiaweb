@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { auth } from '../../firebase/config';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface AdminLoginProps {
   onClose: () => void;
@@ -11,41 +10,32 @@ interface AdminLoginProps {
 export function AdminLogin({ onClose }: AdminLoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [isResetting, setIsResetting] = useState(false);
+  const [adminKey, setAdminKey] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError('');
+    setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Verify admin key
+      if (adminKey !== 'MASIK') {
+        throw new Error('Invalid admin key');
+      }
+
+      // Here you would typically verify with Firebase
+      // For now, we'll just set the admin state
       localStorage.setItem('isAdminLoggedIn', 'true');
+      window.location.reload(); // Force reload to update the app state
       onClose();
-    } catch (error) {
-      console.error('Error logging in:', error);
-      const newAttempts = failedAttempts + 1;
-      setFailedAttempts(newAttempts);
-      setIsLoading(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!email) {
-      alert('Please enter your email address');
-      return;
-    }
-    
-    setIsResetting(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      alert('Password reset email sent! Please check your inbox.');
-      onClose();
-    } catch (error) {
-      alert('Failed to send reset email. Please try again.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to log in');
     } finally {
-      setIsResetting(false);
+      setLoading(false);
     }
   };
 
@@ -62,7 +52,27 @@ export function AdminLogin({ onClose }: AdminLoginProps) {
           </button>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="adminKey" className="block text-sm font-medium text-gray-700">
+              Admin Key
+            </label>
+            <Input
+              id="adminKey"
+              type="password"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              required
+              className="mt-1"
+            />
+          </div>
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
@@ -81,51 +91,37 @@ export function AdminLogin({ onClose }: AdminLoginProps) {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div className="flex space-x-2">
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
-            >
-              {isLoading ? 'Logging in...' : 'Log in'}
-            </Button>
-
-            {failedAttempts >= 2 && (
-              <Button
+            <div className="relative mt-1">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pr-10"
+              />
+              <button
                 type="button"
-                onClick={handleResetPassword}
-                disabled={isResetting}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white transition-all duration-300"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
               >
-                {isResetting ? '...' : 'Reset'}
-              </Button>
-            )}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button
-            type="button"
-            onClick={onClose}
-            className="w-full mt-2 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-all duration-300"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
           >
-            Cancel
+            {loading ? 'Logging in...' : 'Log in'}
           </Button>
         </form>
-
-        {failedAttempts >= 2 && (
-          <p className="mt-4 text-sm text-red-600 text-center">
-            Multiple failed login attempts detected
-          </p>
-        )}
       </div>
     </div>
   );
