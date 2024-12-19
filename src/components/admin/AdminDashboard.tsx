@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth, db } from '../../firebase/config';
-import { collection, query, onSnapshot, addDoc, doc, deleteDoc, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, doc, deleteDoc, orderBy, updateDoc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,18 +32,18 @@ interface Student {
   age?: number;
   subscriptionPlan?: 'none' | 'basic' | 'premium';
   isSubscribed: boolean;
+  tempPassword?: string;
+  userId: string;
+  passwordChanged?: boolean;
 }
 
 interface Plan {
   id: string;
   name: string;
   priceAmount: number;
-  duration: {
-    value: number;
-    unit: 'minutes' | 'hours';
-  };
   features: string[];
   isActive: boolean;
+  createdAt: number;
 }
 
 type ActiveTab = 'chat' | 'calendar' | 'credits' | 'students';
@@ -66,8 +66,6 @@ export function AdminDashboard() {
   const [newStudentPlan, setNewStudentPlan] = useState<'none' | 'basic' | 'premium'>('none');
   const [newPlanName, setNewPlanName] = useState('');
   const [newPlanPriceAmount, setNewPlanPriceAmount] = useState<number>(0);
-  const [newPlanDurationValue, setNewPlanDurationValue] = useState<number>(60);
-  const [newPlanDurationUnit, setNewPlanDurationUnit] = useState<'minutes' | 'hours'>('minutes');
   const [newPlanFeatures, setNewPlanFeatures] = useState<string[]>([]);
   const [newFeature, setNewFeature] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -160,6 +158,12 @@ export function AdminDashboard() {
 
   const [newMessage, setNewMessage] = useState('');
 
+  const [expandedCredentialId, setExpandedCredentialId] = useState<string | null>(null);
+
+  const toggleCredentials = (studentId: string) => {
+    setExpandedCredentialId(prevId => prevId === studentId ? null : studentId);
+  };
+
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedChat) return;
 
@@ -244,10 +248,21 @@ export function AdminDashboard() {
     const unsubStudents = onSnapshot(
       collection(db, 'students'),
       (snapshot) => {
-        const newStudents = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Student));
+        const newStudents = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || '',
+            email: data.email || '',
+            dateOfBirth: data.dateOfBirth,
+            age: data.age,
+            subscriptionPlan: data.subscriptionPlan,
+            isSubscribed: data.isSubscribed || false,
+            tempPassword: data.tempPassword || '',
+            userId: data.userId,
+            passwordChanged: data.passwordChanged || false
+          } as Student;
+        });
         setStudents(newStudents);
       }
     );
@@ -271,29 +286,59 @@ export function AdminDashboard() {
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    let userCredential;
     
     try {
       // Create auth user
-      const userCredential = await createUserWithEmailAndPassword(
+      userCredential = await createUserWithEmailAndPassword(
         auth,
         newStudentEmail,
         newStudentPassword
       );
 
-      // Add to students collection
-      await addDoc(collection(db, 'students'), {
+      // Create a document with the same ID as the auth user
+      const studentRef = doc(db, 'students', userCredential.user.uid);
+      await setDoc(studentRef, {
         name: newStudentName,
         email: newStudentEmail,
         userId: userCredential.user.uid,
-        createdAt: new Date()
+        createdAt: new Date().toISOString(),
+        tempPassword: newStudentPassword,
+        isSubscribed: false,
+        subscriptionPlan: newStudentPlan,
+        dateOfBirth: newStudentDOB || null,
+        passwordChanged: false
       });
 
       setNewStudentName('');
       setNewStudentEmail('');
       setNewStudentPassword('');
+      setNewStudentDOB('');
+      setNewStudentPlan('none');
       setIsAddingStudent(false);
+      setError('');
     } catch (error: any) {
-      setError(error.message);
+      console.error('Error creating student:', error);
+      
+      // If we created the auth user but failed to create the document,
+      // we should delete the auth user to maintain consistency
+      if (userCredential?.user) {
+        try {
+          await userCredential.user.delete();
+        } catch (deleteError) {
+          console.error('Error cleaning up auth user:', deleteError);
+        }
+      }
+
+      if (error.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password should be at least 6 characters');
+      } else {
+        setError('Failed to create student account. Please try again.');
+      }
     }
   };
 
@@ -341,10 +386,6 @@ export function AdminDashboard() {
         setError('Price cannot be negative');
         return;
       }
-      if (newPlanDurationValue < 1) {
-        setError('Duration must be at least 1');
-        return;
-      }
       if (!newPlanName.trim()) {
         setError('Plan name is required');
         return;
@@ -353,12 +394,9 @@ export function AdminDashboard() {
       const planData = {
         name: newPlanName.trim(),
         priceAmount: Number(newPlanPriceAmount),
-        duration: {
-          value: Number(newPlanDurationValue),
-          unit: newPlanDurationUnit
-        },
         features: newPlanFeatures,
-        isActive: true
+        isActive: true,
+        createdAt: Date.now()
       };
 
       await addDoc(collection(db, 'plans'), planData);
@@ -366,8 +404,6 @@ export function AdminDashboard() {
       // Reset form
       setNewPlanName('');
       setNewPlanPriceAmount(0);
-      setNewPlanDurationValue(60);
-      setNewPlanDurationUnit('minutes');
       setNewPlanFeatures([]);
       setIsEditingPlan(false);
       setError('');
@@ -390,10 +426,6 @@ export function AdminDashboard() {
         setError('Price cannot be negative');
         return;
       }
-      if (newPlanDurationValue < 1) {
-        setError('Duration must be at least 1');
-        return;
-      }
       if (!newPlanName.trim()) {
         setError('Plan name is required');
         return;
@@ -402,10 +434,6 @@ export function AdminDashboard() {
       const planData = {
         name: newPlanName.trim(),
         priceAmount: Number(newPlanPriceAmount),
-        duration: {
-          value: Number(newPlanDurationValue),
-          unit: newPlanDurationUnit
-        },
         features: newPlanFeatures
       };
 
@@ -445,8 +473,6 @@ export function AdminDashboard() {
       setSelectedPlan(plan);
       setNewPlanName(plan.name);
       setNewPlanPriceAmount(Number(plan.priceAmount) || 0);
-      setNewPlanDurationValue(Number(plan.duration.value) || 60);
-      setNewPlanDurationUnit(plan.duration.unit || 'minutes');
       setNewPlanFeatures(Array.isArray(plan.features) ? [...plan.features] : []);
       setIsEditingPlan(true);
       setError('');
@@ -489,6 +515,34 @@ export function AdminDashboard() {
     }
     
     return age;
+  };
+
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [selectedStudentForReset, setSelectedStudentForReset] = useState<Student | null>(null);
+  const [newTempPassword, setNewTempPassword] = useState('');
+
+  const handleResetPassword = async () => {
+    if (!selectedStudentForReset || !newTempPassword) return;
+
+    try {
+      // Update the temporary password in Firestore
+      await updateDoc(doc(db, 'students', selectedStudentForReset.id), {
+        tempPassword: newTempPassword,
+        passwordResetAt: new Date(),
+        passwordChanged: false
+      });
+
+      setNewTempPassword('');
+      setIsResetPasswordModalOpen(false);
+      setSelectedStudentForReset(null);
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const openResetPasswordModal = (student: Student) => {
+    setSelectedStudentForReset(student);
+    setIsResetPasswordModalOpen(true);
   };
 
   return (
@@ -705,8 +759,6 @@ export function AdminDashboard() {
                         setSelectedPlan(null);
                         setNewPlanName('');
                         setNewPlanPriceAmount(0);
-                        setNewPlanDurationValue(60);
-                        setNewPlanDurationUnit('minutes');
                         setNewPlanFeatures([]);
                         setIsEditingPlan(true);
                       }}
@@ -736,9 +788,6 @@ export function AdminDashboard() {
                           <div className="mb-4">
                             <div className="flex items-baseline gap-1 mb-2">
                               <span className="text-2xl font-bold text-[#000080]">{plan.priceAmount} CZK</span>
-                              <span className="text-[#4169E1] text-sm">
-                                / {plan.duration.value} {plan.duration.unit}
-                              </span>
                             </div>
                           </div>
 
@@ -758,7 +807,7 @@ export function AdminDashboard() {
                           <div className="flex gap-2">
                             <Button
                               onClick={() => handleStartEditPlan(plan)}
-                              className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1]"
+                              className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
                               size="sm"
                             >
                               Edit
@@ -802,80 +851,145 @@ export function AdminDashboard() {
                     </Button>
                   </div>
 
-                  {/* Student list */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Students List */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                     {students.map((student) => (
-                      <div key={student.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <div className="p-6">
-                          {/* Student Header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                              <div className="h-12 w-12 rounded-full bg-[#000080] flex items-center justify-center text-white text-xl font-semibold">
-                                {student.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="ml-4">
-                                <h3 className="text-lg font-semibold text-[#000080]">{student.name}</h3>
-                                <p className="text-gray-500 text-sm">{student.email}</p>
+                      <div
+                        key={student.id}
+                        className="relative mb-6"
+                      >
+                        <div className={`bg-white rounded-xl shadow-md transition-all duration-300 ${
+                          expandedCredentialId === student.id 
+                            ? 'shadow-lg' 
+                            : 'hover:shadow-lg'
+                        }`}>
+                          <div className="p-6">
+                            {/* Student Header */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center">
+                                <div className="h-12 w-12 rounded-full bg-[#000080] flex items-center justify-center text-white text-xl font-semibold">
+                                  {student.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="ml-4">
+                                  <h3 className="text-lg font-semibold text-[#000080]">{student.name}</h3>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Student Details */}
-                          <div className="space-y-3 mb-6">
-                            {student.age && (
-                              <div className="flex items-center text-gray-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            {/* Additional Information */}
+                            <div className="space-y-2 mb-4">
+                              {student.dateOfBirth && (
+                                <p className="text-sm text-gray-600">
+                                  Date of Birth: {student.dateOfBirth}
+                                </p>
+                              )}
+                              <div className="flex items-center">
+                                <span className="text-sm text-gray-600 mr-2">Plan:</span>
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  student.subscriptionPlan === 'premium' 
+                                    ? 'bg-[#000080] text-white' 
+                                    : student.subscriptionPlan === 'basic'
+                                    ? 'bg-[#4169E1] text-white'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {student.subscriptionPlan || 'None'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 mb-4">
+                              <Button
+                                onClick={() => handleStartEdit(student)}
+                                className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
+                                size="sm"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteStudent(student.id)}
+                                variant="destructive"
+                                size="sm"
+                                className="flex-1"
+                              >
+                                Delete
+                              </Button>
+                              <Button
+                                onClick={() => openResetPasswordModal(student)}
+                                size="sm"
+                                className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1]"
+                              >
+                                Reset Password
+                              </Button>
+                            </div>
+
+                            {/* Login Credentials (Collapsible) */}
+                            <div className="border-t pt-4">
+                              <button
+                                onClick={() => toggleCredentials(student.id)}
+                                className="w-full flex items-center justify-between text-sm font-semibold text-[#4169E1] hover:text-[#000080] transition-colors duration-200"
+                              >
+                                <span>Login Credentials</span>
+                                <svg
+                                  className={`w-5 h-5 transition-transform duration-200 ${
+                                    expandedCredentialId === student.id ? 'transform rotate-180' : ''
+                                  }`}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
                                 </svg>
-                                <span>Age: {student.age} years</span>
-                              </div>
-                            )}
-                            <div className="flex items-center text-gray-600">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>
-                                {student.subscriptionPlan ? (
-                                  <>
-                                    <span className="font-medium">{student.subscriptionPlan.charAt(0).toUpperCase() + student.subscriptionPlan.slice(1)}</span>
-                                    <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                                      student.isSubscribed 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {student.isSubscribed ? 'Active' : 'Inactive'}
-                                    </span>
-                                  </>
-                                ) : (
-                                  'No Subscription'
-                                )}
-                              </span>
+                              </button>
                             </div>
                           </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleStartEdit(student)}
-                              className="flex-1 bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
-                              size="sm"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Edit
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteStudent(student.id)}
-                              variant="destructive"
-                              size="sm"
-                              className="flex-1"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </Button>
+                        </div>
+                        
+                        {/* Credentials Overlay */}
+                        <div 
+                          className={`absolute left-0 right-0 bg-white rounded-b-xl shadow-lg transition-all duration-300 ease-in-out ${
+                            expandedCredentialId === student.id 
+                              ? 'opacity-100 translate-y-0 z-10' 
+                              : 'opacity-0 -translate-y-4 pointer-events-none'
+                          }`}
+                          style={{
+                            top: '100%',
+                            marginTop: '-0.5rem',
+                          }}
+                        >
+                          <div className="p-4 border-t border-gray-100">
+                            <div className="space-y-3">
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Email:</span>
+                                <code className="block bg-gray-50 px-3 py-2 rounded mt-1 text-sm border border-gray-200 font-mono">
+                                  {student.email}
+                                </code>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Password Status:</span>
+                                <div className="mt-1 flex items-center">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    student.passwordChanged 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {student.passwordChanged ? 'Password Set by Student' : 'Using Temporary Password'}
+                                  </span>
+                                </div>
+                                <Button
+                                  onClick={() => openResetPasswordModal(student)}
+                                  className="w-full mt-2 bg-[#4169E1] hover:bg-[#000080] text-white transition-colors duration-200"
+                                  size="sm"
+                                >
+                                  Reset Password
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -967,6 +1081,36 @@ export function AdminDashboard() {
                     )}
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="studentDOB" className="block text-sm font-medium text-gray-700">
+                  Date of Birth
+                </label>
+                <Input
+                  id="studentDOB"
+                  type="date"
+                  value={newStudentDOB}
+                  onChange={(e) => setNewStudentDOB(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="studentPlan" className="block text-sm font-medium text-gray-700">
+                  Subscription Plan
+                </label>
+                <select
+                  id="studentPlan"
+                  value={newStudentPlan}
+                  onChange={(e) => setNewStudentPlan(e.target.value as 'none' | 'basic' | 'premium')}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#000080] focus:ring-[#000080]"
+                  required
+                >
+                  <option value="none">No Subscription</option>
+                  <option value="basic">Basic Plan</option>
+                  <option value="premium">Premium Plan</option>
+                </select>
               </div>
 
               <Button
@@ -1132,42 +1276,6 @@ export function AdminDashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Duration Value
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={newPlanDurationValue}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (value >= 1) {
-                        setNewPlanDurationValue(value);
-                      }
-                    }}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Duration Unit
-                  </label>
-                  <select
-                    value={newPlanDurationUnit}
-                    onChange={(e) => setNewPlanDurationUnit(e.target.value as 'minutes' | 'hours')}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#4169E1] focus:ring-[#4169E1]"
-                    required
-                  >
-                    <option value="minutes">Minutes</option>
-                    <option value="hours">Hours</option>
-                  </select>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Features
@@ -1214,6 +1322,55 @@ export function AdminDashboard() {
                 className="w-full bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
               >
                 {selectedPlan ? 'Save Changes' : 'Add Plan'}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {isResetPasswordModalOpen && selectedStudentForReset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#000080]">Reset Password</h2>
+              <button
+                onClick={() => {
+                  setIsResetPasswordModalOpen(false);
+                  setSelectedStudentForReset(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  New Temporary Password
+                </label>
+                <Input
+                  value={newTempPassword}
+                  onChange={(e) => setNewTempPassword(e.target.value)}
+                  required
+                  className="mt-1"
+                  type="password"
+                  minLength={6}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
+              >
+                Reset Password
               </Button>
             </form>
           </div>

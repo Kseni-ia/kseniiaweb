@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
-import { AdminLogin } from "./admin/AdminLogin";
+import { Login } from "./Login";
 import { auth } from '../firebase/config';
 
 declare global {
@@ -17,10 +17,13 @@ interface NavigationProps {
 }
 
 export function Navigation({ isAdminLoggedIn }: NavigationProps) {
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('isStudentLoggedIn');
+    localStorage.removeItem('studentId');
+    auth.signOut();
     window.location.href = '/';
   };
 
@@ -39,7 +42,7 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
                 onClick={handleLogout}
                 className="bg-red-600 text-white hover:bg-red-700 transition-all duration-300"
               >
-                Admin Logout
+                Logout
               </Button>
             </div>
           ) : (
@@ -90,10 +93,10 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
 
               <div className="flex items-center space-x-4">
                 <Button
-                  onClick={() => setIsAdminLoginOpen(true)}
+                  onClick={() => setIsLoginOpen(true)}
                   className="bg-[#000080] text-white hover:bg-[#4169E1] transition-all duration-300"
                 >
-                  Admin Login
+                  Log in
                 </Button>
               </div>
             </>
@@ -101,8 +104,8 @@ export function Navigation({ isAdminLoggedIn }: NavigationProps) {
         </div>
       </div>
 
-      {isAdminLoginOpen && !isAdminLoggedIn && (
-        <AdminLogin onClose={() => setIsAdminLoginOpen(false)} />
+      {isLoginOpen && (
+        <Login onClose={() => setIsLoginOpen(false)} />
       )}
     </nav>
   );
